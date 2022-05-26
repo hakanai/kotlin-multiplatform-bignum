@@ -20,6 +20,7 @@ package com.ionspin.kotlin.bignum.decimal
 import com.ionspin.kotlin.bignum.BigNumber
 import com.ionspin.kotlin.bignum.CommonBigNumberOperations
 import com.ionspin.kotlin.bignum.NarrowingOperations
+import com.ionspin.kotlin.bignum.decimal.util.ArctangentCalculator
 import com.ionspin.kotlin.bignum.decimal.util.CosineCalculator
 import com.ionspin.kotlin.bignum.decimal.util.ExponentialCalculator
 import com.ionspin.kotlin.bignum.decimal.util.HyperbolicCosineCalculator
@@ -1737,6 +1738,48 @@ class BigDecimal private constructor(
         val higherPrecisionMode = decimalMode.copy(decimalPrecision = decimalMode.decimalPrecision + 3)
         return sin(higherPrecisionMode)
             .divide(cos(higherPrecisionMode), decimalMode)
+    }
+
+    /**
+     * Arctangent function
+     * @param decimalMode the decimal mode to use. Precision and rounding mode must be specified.
+     * @return Result of arctangent function for this BigDecimal.
+     */
+    fun arctan(decimalMode: DecimalMode): BigDecimal {
+        var temp = this
+        val sign = this.signum()
+        if (sign == 0) {
+            return ZERO
+        } else if (sign < 0) {
+            temp = -temp
+        }
+
+        // The series for arctan converges for values <= 1, but actually converges extremely
+        // slowly for values near 1.
+        // Euler had a few solutions for this, but one was this identity:
+        //
+        //     arctan(x) = arctan(c) + arctan((x - c) / (1 + xc))
+        //
+        // This logic can be repeated for as many times as needed until the value you need
+        // the arctan for goes below the cutoff.
+        //
+        // One source gave 2-sqrt(3) (about 0.268) as the cutoff for this choice.
+
+        val cutoff = parseString("0.268")
+        if (this <= cutoff) {
+            return ArctangentCalculator.calculate(temp, decimalMode) * sign
+        }
+
+        val higherPrecisionMode = decimalMode.copy(decimalPrecision = decimalMode.decimalPrecision + 5)
+        val arctanOfCutoff = ArctangentCalculator.calculate(cutoff, higherPrecisionMode)
+        var times = 0
+        while (temp > cutoff) {
+            temp = (temp - cutoff).divide((temp * cutoff + 1), higherPrecisionMode)
+            times++
+        }
+
+        return (arctanOfCutoff * times + ArctangentCalculator.calculate(temp, higherPrecisionMode))
+            .multiply(sign.toBigDecimal(), decimalMode)
     }
 
     /**

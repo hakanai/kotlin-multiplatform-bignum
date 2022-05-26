@@ -51,6 +51,40 @@ class BigDecimalTrigTest {
     }
 
     @Test
+    fun arcsinTest() {
+        val decimalMode = DecimalMode(decimalPrecision = 20, roundingMode = RoundingMode.TOWARDS_ZERO)
+        val examples = listOf(
+            "0" to "0",
+            "0.2" to "0.20135792079033079145",
+            "0.4" to "0.41151684606748801938",
+            "0.6" to "0.64350110879328438680",
+            "0.8" to "0.92729521800161223242",
+            "1" to "1.5707963267948966192"
+        )
+
+        for ((input, expected) in examples) {
+            assertEquals(BigDecimal.parseString(expected), BigDecimal.parseString(input).arcsin(decimalMode))
+        }
+    }
+
+    @Test
+    fun arccosTest() {
+        val decimalMode = DecimalMode(decimalPrecision = 20, roundingMode = RoundingMode.TOWARDS_ZERO)
+        val examples = listOf(
+            "0" to "1.5707963267948966192",
+            "0.2" to "1.3694384060045658277",
+            "0.4" to "1.1592794807274085998",
+            "0.6" to "0.92729521800161223242",
+            "0.8" to "0.64350110879328438680",
+            "1" to "0",
+        )
+
+        for ((input, expected) in examples) {
+            assertEquals(BigDecimal.parseString(expected), BigDecimal.parseString(input).arccos(decimalMode))
+        }
+    }
+
+    @Test
     fun arctanTest() {
         val decimalMode = DecimalMode(decimalPrecision = 20, roundingMode = RoundingMode.TOWARDS_ZERO)
         val examples = listOf(

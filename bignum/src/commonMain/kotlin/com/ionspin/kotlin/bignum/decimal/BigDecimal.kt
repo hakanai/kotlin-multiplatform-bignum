@@ -1439,11 +1439,39 @@ class BigDecimal private constructor(
 //
 //        }
 //    }
-//
-//    fun sqrt() : BigDecimal {
-//        val root = significand.sqrt()
-//        val exponent =
-//    }
+
+    fun sqrt(decimalMode: DecimalMode): BigDecimal {
+        // Special cases
+        if (isNegative) {
+            throw ArithmeticException("No real square root for a negative number")
+        }
+        if (isZero()) {
+            return ZERO
+        }
+        if (this == ONE) {
+            return ONE
+        }
+
+        val epsilon = ONE.moveDecimalPoint(-(decimalMode.decimalPrecision + 1))
+        val pointFive = parseString("0.5")
+
+        // Pick a suitable initial guess. For larger values guess 10^(exponent / 2), otherwise
+        // you waste steps just getting to the right order of magnitude.
+        var lastGuess = if (this < ONE) ONE else TEN.pow(exponent / 2)
+
+        // Newton's method
+        // Improve on the guess each time with next = 0.5 * (last + (N / last))
+        while (true) {
+            val nextGuess = (lastGuess + divide(lastGuess, decimalMode)).multiply(pointFive, decimalMode)
+            val diff = nextGuess - lastGuess
+            if (diff.abs() < epsilon) {
+                return nextGuess
+            } else {
+                lastGuess = nextGuess
+            }
+        }
+    }
+
     /**
      * Return this truncated by using floor rounding
      */
@@ -1738,6 +1766,42 @@ class BigDecimal private constructor(
         val higherPrecisionMode = decimalMode.copy(decimalPrecision = decimalMode.decimalPrecision + 3)
         return sin(higherPrecisionMode)
             .divide(cos(higherPrecisionMode), decimalMode)
+    }
+
+    /**
+     * Arcsine function
+     * @param decimalMode the decimal mode to use. Precision and rounding mode must be specified.
+     * @return Result of arcsine function for this BigDecimal.
+     */
+    fun arcsin(decimalMode: DecimalMode): BigDecimal {
+        if (this == ONE) {
+            // Dodge division by zero
+            return ONE.arctan(decimalMode).multiply(TWO, decimalMode)
+        }
+
+        val higherPrecisionMode = decimalMode.copy(decimalPrecision = decimalMode.decimalPrecision + 1)
+        // arcsin(x) = arctan(x / sqrt(1 - x^2))
+        return this
+            .divide((ONE - this.multiply(this, higherPrecisionMode)).sqrt(higherPrecisionMode), higherPrecisionMode)
+            .arctan(decimalMode)
+    }
+
+    /**
+     * Arccosine function
+     * @param decimalMode the decimal mode to use. Precision and rounding mode must be specified.
+     * @return Result of arccosine function for this BigDecimal.
+     */
+    fun arccos(decimalMode: DecimalMode): BigDecimal {
+        if (isZero()) {
+            // Dodge division by zero
+            return ONE.arctan(decimalMode).multiply(TWO, decimalMode)
+        }
+
+        val higherPrecisionMode = decimalMode.copy(decimalPrecision = decimalMode.decimalPrecision + 1)
+        // arccos(x) = arctan(sqrt(1 - x^2) / x)
+        return (ONE - this * this).sqrt(higherPrecisionMode)
+            .divide(this, higherPrecisionMode)
+            .arctan(decimalMode)
     }
 
     /**

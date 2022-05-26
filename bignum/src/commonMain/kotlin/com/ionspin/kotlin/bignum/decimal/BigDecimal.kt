@@ -24,6 +24,7 @@ import com.ionspin.kotlin.bignum.decimal.util.CosineCalculator
 import com.ionspin.kotlin.bignum.decimal.util.ExponentialCalculator
 import com.ionspin.kotlin.bignum.decimal.util.HyperbolicCosineCalculator
 import com.ionspin.kotlin.bignum.decimal.util.HyperbolicSineCalculator
+import com.ionspin.kotlin.bignum.decimal.util.NaturalLogarithmCalculator
 import com.ionspin.kotlin.bignum.decimal.util.SineCalculator
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import com.ionspin.kotlin.bignum.integer.Platform
@@ -1708,6 +1709,19 @@ class BigDecimal private constructor(
      */
     fun exp(decimalMode: DecimalMode): BigDecimal {
         return ExponentialCalculator.calculate(this, decimalMode)
+    }
+
+    /**
+     * Natural logarithm function
+     * @param decimalMode the decimal mode to use. Precision and rounding mode must be specified.
+     * @return Result of natural logarithm function for this BigDecimal.
+     */
+    fun ln(decimalMode: DecimalMode): BigDecimal {
+        if (!isPositive) {
+            throw ArithmeticException("Can only compute ln(x) for positive x")
+        }
+
+        return NaturalLogarithmCalculator.calculate(this, decimalMode)
     }
 
     /**
